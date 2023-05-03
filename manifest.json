@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": " Tab Limiter",
+  "version": "0.1",
+  "description": "Limits the number of opened tabs per domain",
+  "permissions": [
+    "tabs",
+    "notifications",
+    "storage"
+  ],
+  "default_icon": {
+    "16": "favicon-16x16.png",
+    "32": "favicon-32x32.png"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}
