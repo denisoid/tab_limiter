@@ -63,16 +63,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const domainRaw = domainForm.domain.value;
         const domain = normalizeDomainInput(domainRaw);
         const maxTabs = parseInt(domainForm["max-tabs"].value, 10);
+        const action = domainForm.action.value || null;
 
         if (!domain || !Number.isFinite(maxTabs) || maxTabs < 1) return;
 
         chrome.storage.sync.get({domains: {}}, ({domains}) => {
             domains = domains || {};
-            const existing = getDomainConfig(domains[domain]);
-            domains[domain] = { maxTabs, action: existing.action };
+            domains[domain] = { maxTabs, action };
 
             chrome.storage.sync.set({domains}, () => {
                 domainForm.domain.value = "";
+                domainForm.action.value = "";
                 updateDomainList(domains);
             });
         });
@@ -91,10 +92,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
         for (const domain in domains) {
             const cfg = getDomainConfig(domains[domain]);
-            const li = document.createElement("li");
 
-            li.appendChild(document.createTextNode(`${domain}: ${cfg.maxTabs} tab${cfg.maxTabs !== 1 ? "s" : ""}  `));
+            console.log(cfg);
+            const tr = document.createElement("tr");
 
+            const tdDomain = document.createElement("td");
+            tdDomain.textContent = domain;
+
+            const tdTabs = document.createElement("td");
+            const tabsInput = document.createElement("input");
+            tabsInput.type = "number";
+            tabsInput.min = "1";
+            tabsInput.value = cfg.maxTabs;
+            tabsInput.addEventListener("change", () => {
+                const val = parseInt(tabsInput.value, 10);
+                if (!Number.isFinite(val) || val < 1) return;
+                chrome.storage.sync.get({domains: {}}, ({domains}) => {
+                    const c = getDomainConfig(domains[domain]);
+                    domains[domain] = { maxTabs: val, action: c.action };
+                    chrome.storage.sync.set({domains});
+                });
+            });
+            tdTabs.appendChild(tabsInput);
+
+            const tdAction = document.createElement("td");
             const select = document.createElement("select");
             [
                 { value: "",                        label: "Default (global)" },
@@ -107,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if ((cfg.action ?? "") === value) opt.selected = true;
                 select.appendChild(opt);
             });
-
             select.addEventListener("change", () => {
                 chrome.storage.sync.get({domains: {}}, ({domains}) => {
                     const c = getDomainConfig(domains[domain]);
@@ -115,18 +135,24 @@ document.addEventListener("DOMContentLoaded", () => {
                     chrome.storage.sync.set({domains});
                 });
             });
+            tdAction.appendChild(select);
 
+            const tdRemove = document.createElement("td");
             const removeButton = document.createElement("button");
             removeButton.type = "button";
-            removeButton.textContent = "Delete";
+            removeButton.className = "secondary";
+            removeButton.textContent = "×";
             removeButton.addEventListener("click", () => {
                 delete domains[domain];
                 chrome.storage.sync.set({domains}, () => updateDomainList(domains));
             });
+            tdRemove.appendChild(removeButton);
 
-            li.appendChild(select);
-            li.appendChild(removeButton);
-            domainList.appendChild(li);
+            tr.appendChild(tdDomain);
+            tr.appendChild(tdTabs);
+            tr.appendChild(tdAction);
+            tr.appendChild(tdRemove);
+            domainList.appendChild(tr);
         }
     }
 });
