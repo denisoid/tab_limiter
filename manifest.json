@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Tab Limiter",
-  "version": "0.2",
-  "description": "Limits the number of opened tabs per domain",
+  "version": "0.3",
+  "description": "Limit open tabs globally and per domain",
   "permissions": [
     "tabs",
     "notifications",

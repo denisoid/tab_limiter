@@ -2,16 +2,6 @@ const LimitAction = Object.freeze({ BLOCK: "block", CLOSE_OLDEST: "close_oldest"
 
 const actionApi = chrome.action || chrome.browserAction;
 
-const INTERNAL_SCHEMES = ["chrome:", "chrome-extension:", "about:", "data:", "javascript:"];
-
-function isInternalUrl(url) {
-    if (!url) return true;
-    try {
-        return INTERNAL_SCHEMES.includes(new URL(url).protocol);
-    } catch (_) {
-        return true;
-    }
-}
 
 function normalizeHostnameFromUrl(url) {
     try {
@@ -55,9 +45,9 @@ function getEffectiveAction(domainAction, globalAction) {
 
 function setBadge(tabId, text, color) {
     if (!actionApi) return;
-    actionApi.setBadgeText({tabId, text: text || ""});
+    actionApi.setBadgeText({tabId, text: text || ""}).catch(() => {});
     if (color && actionApi.setBadgeBackgroundColor) {
-        actionApi.setBadgeBackgroundColor({tabId, color});
+        actionApi.setBadgeBackgroundColor({tabId, color}).catch(() => {});
     }
 }
 
@@ -107,7 +97,7 @@ function updateBadgeForActiveTab() {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-    if (!changeInfo.url || isInternalUrl(changeInfo.url)) return;
+    if (!changeInfo.url) return;
 
     chrome.storage.sync.get({domains: {}, limitAction: LimitAction.BLOCK}, ({domains, limitAction}) => {
         const hostname = normalizeHostnameFromUrl(changeInfo.url);
@@ -125,9 +115,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
                 if (action === LimitAction.CLOSE_OLDEST) {
                     const sorted = [...tabs].sort((a, b) => a.index - b.index);
                     const oldest = sorted.find(t => t.id !== tabId) || sorted[0];
-                    chrome.tabs.remove(oldest.id);
+                    chrome.tabs.remove(oldest.id).catch(() => {});
                 } else {
-                    chrome.tabs.remove(tabId);
+                    chrome.tabs.remove(tabId).catch(() => {});
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "favicon-32x32.png",
@@ -157,14 +147,14 @@ chrome.tabs.onCreated.addListener((tab) => {
         if (!totalLimit || totalLimit < 1) return;
 
         chrome.tabs.query({}, (tabs) => {
-            const userTabs = (tabs || []).filter(t => !isInternalUrl(t.url));
+            const userTabs = tabs || [];
             if (userTabs.length > totalLimit) {
                 if (limitAction === LimitAction.CLOSE_OLDEST) {
                     const sorted = userTabs.sort((a, b) => a.index - b.index);
                     const oldest = sorted.find(t => t.id !== tab.id) || sorted[0];
-                    chrome.tabs.remove(oldest.id);
+                    chrome.tabs.remove(oldest.id).catch(() => {});
                 } else {
-                    chrome.tabs.remove(tab.id);
+                    chrome.tabs.remove(tab.id).catch(() => {});
                     chrome.notifications.create({
                         type: "basic",
                         iconUrl: "favicon-32x32.png",

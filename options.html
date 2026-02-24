@@ -86,6 +86,10 @@
             margin-top: 2em;
         }
 
+        fieldset legend * {
+            margin: 0;
+        }
+
         table {
             margin-top: 0;
         }
@@ -129,55 +133,54 @@
 
     <div class="row">
         <label for="total-limit" style="white-space: nowrap; margin: 0;">Global tab limit:</label>
-        <div class="num-stepper">
-            <button type="button" id="total-limit-dec">−</button>
-            <input type="number" id="total-limit" min="1" placeholder="∞" style="width: 52px;">
-            <button type="button" id="total-limit-inc">+</button>
-        </div>
+        <span id="total-limit"></span>
+        <span style="color: var(--pico-muted-color); font-size: 0.875em;">0 = unlimited</span>
     </div>
 
     <fieldset>
-        <legend>When limit is reached:</legend>
-        <label><input type="radio" name="limit-action" id="action-block" value="block"> Block new tab (default)</label>
+        <legend>Global behavior:</legend>
+        <label><input type="radio" name="limit-action" id="action-block" value="block"> Block new tab</label>
         <label><input type="radio" name="limit-action" id="action-close-oldest" value="close_oldest"> Close oldest
             tab</label>
     </fieldset>
 
-    <label>
-        <input type="checkbox" id="show-badge">
-        Show badge (tabs left)
-    </label>
 
     <hr>
 
-    <h2>Add domain</h2>
-    <form id="domain-form" class="row">
-        <input type="text" id="domain" name="domain" placeholder="example.com">
-        <div class="num-stepper">
-            <button type="button">−</button>
-            <input type="number" id="max-tabs" name="max-tabs" min="1" value="1">
-            <button type="button">+</button>
-        </div>
-        <select id="domain-action" name="action" style="width: auto; margin-bottom: 0;">
-            <option value="">Default (global)</option>
-            <option value="block">Block new tab</option>
-            <option value="close_oldest">Close oldest tab</option>
-        </select>
-        <button type="submit" style="width: auto; margin-bottom: 0;">+</button>
-    </form>
+    <fieldset>
+        <legend><h3>Add domain limit</h3></legend>
+        <form id="domain-form" class="row">
+            <input type="text" id="domain" name="domain" placeholder="example.com">
+            <div class="num-stepper">
+                <button type="button">−</button>
+                <input type="number" id="max-tabs" name="max-tabs" min="1" value="1">
+                <button type="button">+</button>
+            </div>
+            <button type="submit" style="width: auto; margin-bottom: 0;">+</button>
+        </form>
+    </fieldset>
 
-    <h2>Domains</h2>
-    <table>
-        <thead>
-        <tr>
-            <th>Domain</th>
-            <th>Max tabs</th>
-            <th>Action</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody id="domain-list"></tbody>
-    </table>
+    <div id="domain-section" hidden>
+        <h2>Domains</h2>
+
+        <label>
+            <input type="checkbox" id="show-badge">
+            Show badge (tabs left for current domain)
+        </label>
+
+
+        <table>
+            <thead>
+            <tr>
+                <th>Domain</th>
+                <th>Max tabs</th>
+                <th>Behavior</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody id="domain-list"></tbody>
+        </table>
+    </div>
 </main>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const LimitAction = Object.freeze({ BLOCK: "block", CLOSE_OLDEST: "close_oldest" });
+const LimitAction = Object.freeze({BLOCK: "block", CLOSE_OLDEST: "close_oldest"});
 
 document.addEventListener("DOMContentLoaded", () => {
     const domainForm = document.getElementById("domain-form");
@@ -23,22 +23,14 @@ document.addEventListener("DOMContentLoaded", () => {
         wrapper.append(btnDec, input, btnInc);
         return wrapper;
     }
-    const showBadgeCheckbox = document.getElementById("show-badge");
-    const totalLimitInput = document.getElementById("total-limit");
-    function saveTotalLimit() {
-        const val = parseInt(totalLimitInput.value, 10);
-        chrome.storage.sync.set({ totalLimit: Number.isFinite(val) && val >= 1 ? val : 0 });
-    }
 
-    document.getElementById("total-limit-dec").addEventListener("click", () => {
-        if (totalLimitInput.value) { totalLimitInput.stepDown(); saveTotalLimit(); }
+    const showBadgeCheckbox = document.getElementById("show-badge");
+
+    const totalLimitStepper = makeNumStepper(0, 0, (val) => {
+        chrome.storage.sync.set({totalLimit: Number.isFinite(val) && val >= 0 ? val : 0});
     });
-    document.getElementById("total-limit-inc").addEventListener("click", () => {
-        if (!totalLimitInput.value) totalLimitInput.value = 1;
-        else totalLimitInput.stepUp();
-        saveTotalLimit();
-    });
-    totalLimitInput.addEventListener("change", saveTotalLimit);
+    document.getElementById("total-limit").replaceWith(totalLimitStepper);
+    const totalLimitInput = totalLimitStepper.querySelector("input");
 
     function normalizeDomainInput(input) {
         let v = (input || "").trim().toLowerCase();
@@ -53,10 +45,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return v;
     }
 
-    // entry: number (legacy) | { maxTabs, action: LimitAction.* | null }
     function getDomainConfig(entry) {
-        if (typeof entry === "number") return { maxTabs: entry, action: null };
-        return entry || { maxTabs: 1, action: null };
+        if (typeof entry === "number") return {maxTabs: entry, action: null};
+        return entry || {maxTabs: 1, action: null};
     }
 
     const maxTabsInput = document.getElementById("max-tabs");
@@ -64,16 +55,18 @@ document.addEventListener("DOMContentLoaded", () => {
     stepDec.addEventListener("click", () => maxTabsInput.stepDown());
     stepInc.addEventListener("click", () => maxTabsInput.stepUp());
 
-    chrome.storage.sync.get({ domains: {}, showBadge: false, totalLimit: 0, limitAction: LimitAction.BLOCK }, ({ domains, showBadge, totalLimit, limitAction }) => {
-        showBadgeCheckbox.checked = !!showBadge;
-        if (totalLimit > 0) totalLimitInput.value = totalLimit;
+    chrome.storage.sync.get(
+        {domains: {}, showBadge: false, totalLimit: 0, limitAction: LimitAction.BLOCK},
+        ({domains, showBadge, totalLimit, limitAction}) => {
+            showBadgeCheckbox.checked = !!showBadge;
+            totalLimitInput.value = totalLimit;
 
-        const radio = document.querySelector(`input[name="limit-action"][value="${limitAction}"]`);
-        if (radio) radio.checked = true;
-        else document.getElementById("action-block").checked = true;
+            const radio = document.querySelector(`input[name="limit-action"][value="${limitAction}"]`);
+            if (radio) radio.checked = true;
+            else document.getElementById("action-block").checked = true;
 
-        updateDomainList(domains);
-    });
+            updateDomainList(domains);
+        });
 
     showBadgeCheckbox.addEventListener("change", () => {
         chrome.storage.sync.set({showBadge: showBadgeCheckbox.checked});
@@ -81,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelectorAll('input[name="limit-action"]').forEach(radio => {
         radio.addEventListener("change", () => {
-            if (radio.checked) chrome.storage.sync.set({ limitAction: radio.value });
+            if (radio.checked) chrome.storage.sync.set({limitAction: radio.value});
         });
     });
 
@@ -92,17 +85,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const domainRaw = domainForm.domain.value;
         const domain = normalizeDomainInput(domainRaw);
         const maxTabs = parseInt(domainForm["max-tabs"].value, 10);
-        const action = domainForm.action.value || null;
-
         if (!domain || !Number.isFinite(maxTabs) || maxTabs < 1) return;
 
         chrome.storage.sync.get({domains: {}}, ({domains}) => {
             domains = domains || {};
-            domains[domain] = { maxTabs, action };
+            domains[domain] = {maxTabs, action: null};
 
             chrome.storage.sync.set({domains}, () => {
                 domainForm.domain.value = "";
-                domainForm.action.value = "";
                 updateDomainList(domains);
             });
         });
@@ -116,13 +106,15 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.sync.get({domains: {}}, ({domains}) => render(domains || {}));
     }
 
+    const domainSection = document.getElementById("domain-section");
+
     function render(domains) {
         domainList.innerHTML = "";
+        domainSection.hidden = Object.keys(domains).length === 0;
 
         for (const domain in domains) {
             const cfg = getDomainConfig(domains[domain]);
 
-            console.log(cfg);
             const tr = document.createElement("tr");
 
             const tdDomain = document.createElement("td");
@@ -133,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!Number.isFinite(val) || val < 1) return;
                 chrome.storage.sync.get({domains: {}}, ({domains}) => {
                     const c = getDomainConfig(domains[domain]);
-                    domains[domain] = { maxTabs: val, action: c.action };
+                    domains[domain] = {maxTabs: val, action: c.action};
                     chrome.storage.sync.set({domains});
                 });
             }));
@@ -141,10 +133,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const tdAction = document.createElement("td");
             const select = document.createElement("select");
             [
-                { value: "",                        label: "Default (global)" },
-                { value: LimitAction.BLOCK,         label: "Block new tab" },
-                { value: LimitAction.CLOSE_OLDEST,  label: "Close oldest tab" },
-            ].forEach(({ value, label }) => {
+                {value: "", label: "Global"},
+                {value: LimitAction.BLOCK, label: "Block new"},
+                {value: LimitAction.CLOSE_OLDEST, label: "Close oldest"},
+            ].forEach(({value, label}) => {
                 const opt = document.createElement("option");
                 opt.value = value;
                 opt.textContent = label;
@@ -154,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
             select.addEventListener("change", () => {
                 chrome.storage.sync.get({domains: {}}, ({domains}) => {
                     const c = getDomainConfig(domains[domain]);
-                    domains[domain] = { maxTabs: c.maxTabs, action: select.value || null };
+                    domains[domain] = {maxTabs: c.maxTabs, action: select.value || null};
                     chrome.storage.sync.set({domains});
                 });
             });
