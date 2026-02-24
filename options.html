@@ -11,20 +11,113 @@
             href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
     >
     <style>
-        body { max-width: 500px; margin: 0 auto; }
-        .row { display: flex; align-items: center; gap: 8px; }
-        input[type="number"] { width: 4em; margin-bottom: 0; }
-        .row input[type="text"] { flex: 1; margin-bottom: 0; }
-        .row select { width: auto; margin-bottom: 0; }
-        .row button { margin-bottom: 0; width: auto; }
-        fieldset{margin-top:2em;}
-        table { margin-top: 0; }
-        td, th{padding-left:10px; padding-right:10px;}
-        tr td:first-child,tr th:first-child{ padding-left:0}
-        tr td:last-child, tr th:last-child{text-align: right; padding-right:0}
-        table select { margin-bottom: 0; width: auto; }
-        table button { margin-bottom: 0; width: auto; padding: 4px 10px; }
-        [type=button]{margin-bottom:0;}
+        body {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="number"] {
+            width: 4em;
+            margin-bottom: 0;
+        }
+
+        .row input[type="text"] {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .row select {
+            width: auto;
+            margin-bottom: 0;
+        }
+
+        .row button {
+            margin-bottom: 0;
+            width: auto;
+        }
+
+        .num-stepper {
+            display: inline-flex;
+            align-items: stretch;
+            margin-bottom: 0;
+        }
+
+        .num-stepper input[type="number"] {
+            width: 2.2em;
+            text-align: center;
+            margin: 0;
+            padding-left: 5px;
+            padding-right: 5px;
+            border-radius: 0;
+            border-left: 0;
+            border-right: 0;
+            appearance: textfield;
+            -webkit-appearance: textfield;
+        }
+
+        .num-stepper input[type="number"]::-webkit-inner-spin-button,
+        .num-stepper input[type="number"]::-webkit-outer-spin-button {
+            display: none;
+        }
+
+        .num-stepper button {
+            margin: 0;
+            padding: 0 7px;
+            width: auto;
+        }
+
+        .num-stepper button:first-child {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .num-stepper button:last-child {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        fieldset {
+            margin-top: 2em;
+        }
+
+        table {
+            margin-top: 0;
+        }
+
+        td, th {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        tr td:first-child, tr th:first-child {
+            padding-left: 0
+        }
+
+        tr td:last-child, tr th:last-child {
+            text-align: right;
+            padding-right: 0
+        }
+
+        table select {
+            margin-bottom: 0;
+            width: auto;
+        }
+
+        table button {
+            margin-bottom: 0;
+            width: auto;
+            padding: 4px 10px;
+        }
+
+        [type=button] {
+            margin-bottom: 0;
+        }
     </style>
     <script src="options.js"></script>
 </head>
@@ -34,50 +127,57 @@
     <h1>Tab Limiter</h1>
 
 
-<div class="row">
-    <label for="total-limit" style="white-space: nowrap; margin: 0;">Global tab limit:</label>
-    <input type="number" id="total-limit" min="1" placeholder="unlimited" style="width: 80px;">
-    <button id="save-total-limit" class="secondary">Save</button>
-    <span id="total-limit-status" style="color: var(--pico-color-green-500); display: none;">Saved</span>
-</div>
+    <div class="row">
+        <label for="total-limit" style="white-space: nowrap; margin: 0;">Global tab limit:</label>
+        <div class="num-stepper">
+            <button type="button" id="total-limit-dec">−</button>
+            <input type="number" id="total-limit" min="1" placeholder="∞" style="width: 52px;">
+            <button type="button" id="total-limit-inc">+</button>
+        </div>
+    </div>
 
-<fieldset>
-    <legend>When limit is reached:</legend>
-    <label><input type="radio" name="limit-action" id="action-block" value="block"> Block new tab (default)</label>
-    <label><input type="radio" name="limit-action" id="action-close-oldest" value="close_oldest"> Close oldest tab</label>
-</fieldset>
+    <fieldset>
+        <legend>When limit is reached:</legend>
+        <label><input type="radio" name="limit-action" id="action-block" value="block"> Block new tab (default)</label>
+        <label><input type="radio" name="limit-action" id="action-close-oldest" value="close_oldest"> Close oldest
+            tab</label>
+    </fieldset>
 
-<label>
-    <input type="checkbox" id="show-badge">
-    Show badge (tabs left)
-</label>
+    <label>
+        <input type="checkbox" id="show-badge">
+        Show badge (tabs left)
+    </label>
 
-<hr>
+    <hr>
 
-<h2>Add domain</h2>
-<form id="domain-form" class="row">
-    <input type="text" id="domain" name="domain" placeholder="example.com">
-    <input type="number" id="max-tabs" name="max-tabs" min="1" value="1">
-    <select id="domain-action" name="action" style="width: auto; margin-bottom: 0;">
-        <option value="">Default (global)</option>
-        <option value="block">Block new tab</option>
-        <option value="close_oldest">Close oldest tab</option>
-    </select>
-    <button type="submit" style="width: auto; margin-bottom: 0;">+</button>
-</form>
+    <h2>Add domain</h2>
+    <form id="domain-form" class="row">
+        <input type="text" id="domain" name="domain" placeholder="example.com">
+        <div class="num-stepper">
+            <button type="button">−</button>
+            <input type="number" id="max-tabs" name="max-tabs" min="1" value="1">
+            <button type="button">+</button>
+        </div>
+        <select id="domain-action" name="action" style="width: auto; margin-bottom: 0;">
+            <option value="">Default (global)</option>
+            <option value="block">Block new tab</option>
+            <option value="close_oldest">Close oldest tab</option>
+        </select>
+        <button type="submit" style="width: auto; margin-bottom: 0;">+</button>
+    </form>
 
-<h2>Domains</h2>
-<table>
-    <thead>
+    <h2>Domains</h2>
+    <table>
+        <thead>
         <tr>
             <th>Domain</th>
             <th>Max tabs</th>
             <th>Action</th>
             <th></th>
         </tr>
-    </thead>
-    <tbody id="domain-list"></tbody>
-</table>
+        </thead>
+        <tbody id="domain-list"></tbody>
+    </table>
 </main>
 </body>
 </html>

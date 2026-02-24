@@ -3,10 +3,42 @@ const LimitAction = Object.freeze({ BLOCK: "block", CLOSE_OLDEST: "close_oldest"
 document.addEventListener("DOMContentLoaded", () => {
     const domainForm = document.getElementById("domain-form");
     const domainList = document.getElementById("domain-list");
+
+    function makeNumStepper(min, value, onChange) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "num-stepper";
+        const btnDec = document.createElement("button");
+        btnDec.type = "button";
+        btnDec.textContent = "−";
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = String(min);
+        input.value = String(value);
+        const btnInc = document.createElement("button");
+        btnInc.type = "button";
+        btnInc.textContent = "+";
+        btnDec.addEventListener("click", () => { input.stepDown(); onChange(parseInt(input.value, 10)); });
+        btnInc.addEventListener("click", () => { input.stepUp();   onChange(parseInt(input.value, 10)); });
+        input.addEventListener("change",  () => { onChange(parseInt(input.value, 10)); });
+        wrapper.append(btnDec, input, btnInc);
+        return wrapper;
+    }
     const showBadgeCheckbox = document.getElementById("show-badge");
     const totalLimitInput = document.getElementById("total-limit");
-    const saveTotalLimitBtn = document.getElementById("save-total-limit");
-    const totalLimitStatus = document.getElementById("total-limit-status");
+    function saveTotalLimit() {
+        const val = parseInt(totalLimitInput.value, 10);
+        chrome.storage.sync.set({ totalLimit: Number.isFinite(val) && val >= 1 ? val : 0 });
+    }
+
+    document.getElementById("total-limit-dec").addEventListener("click", () => {
+        if (totalLimitInput.value) { totalLimitInput.stepDown(); saveTotalLimit(); }
+    });
+    document.getElementById("total-limit-inc").addEventListener("click", () => {
+        if (!totalLimitInput.value) totalLimitInput.value = 1;
+        else totalLimitInput.stepUp();
+        saveTotalLimit();
+    });
+    totalLimitInput.addEventListener("change", saveTotalLimit);
 
     function normalizeDomainInput(input) {
         let v = (input || "").trim().toLowerCase();
@@ -26,6 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof entry === "number") return { maxTabs: entry, action: null };
         return entry || { maxTabs: 1, action: null };
     }
+
+    const maxTabsInput = document.getElementById("max-tabs");
+    const [stepDec, stepInc] = maxTabsInput.closest(".num-stepper").querySelectorAll("button");
+    stepDec.addEventListener("click", () => maxTabsInput.stepDown());
+    stepInc.addEventListener("click", () => maxTabsInput.stepUp());
 
     chrome.storage.sync.get({ domains: {}, showBadge: false, totalLimit: 0, limitAction: LimitAction.BLOCK }, ({ domains, showBadge, totalLimit, limitAction }) => {
         showBadgeCheckbox.checked = !!showBadge;
@@ -48,14 +85,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    saveTotalLimitBtn.addEventListener("click", () => {
-        const val = parseInt(totalLimitInput.value, 10);
-        const totalLimit = Number.isFinite(val) && val >= 1 ? val : 0;
-        chrome.storage.sync.set({totalLimit}, () => {
-            totalLimitStatus.style.display = "inline";
-            setTimeout(() => { totalLimitStatus.style.display = "none"; }, 2000);
-        });
-    });
 
     domainForm.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -100,20 +129,14 @@ document.addEventListener("DOMContentLoaded", () => {
             tdDomain.textContent = domain;
 
             const tdTabs = document.createElement("td");
-            const tabsInput = document.createElement("input");
-            tabsInput.type = "number";
-            tabsInput.min = "1";
-            tabsInput.value = cfg.maxTabs;
-            tabsInput.addEventListener("change", () => {
-                const val = parseInt(tabsInput.value, 10);
+            tdTabs.appendChild(makeNumStepper(1, cfg.maxTabs, (val) => {
                 if (!Number.isFinite(val) || val < 1) return;
                 chrome.storage.sync.get({domains: {}}, ({domains}) => {
                     const c = getDomainConfig(domains[domain]);
                     domains[domain] = { maxTabs: val, action: c.action };
                     chrome.storage.sync.set({domains});
                 });
-            });
-            tdTabs.appendChild(tabsInput);
+            }));
 
             const tdAction = document.createElement("td");
             const select = document.createElement("select");
